@@ -1,0 +1,20 @@
+---
+# source
+source:
+  - "/appspace/src"
+destination: "/appspace/dst"
+log_dir: "/appspace/logs"
+
+# arrage_method options: COPY, MOVE
+arrange_mode: "COPY"
+# on_duplicate: "SKIP', 'DROP', 'MOVE', only effected on arrange_mode == "MOVE"
+duplicate_action: "DROP"
+duplicate_dest_dir: "/appspace/dup"
+
+respect_mtime: "no"
+
+chown: "no"
+chown_uid: 1
+chown_gid: 1
+file_mod: 0440
+dir_mod: 0551

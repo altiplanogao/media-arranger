@@ -1,15 +1,14 @@
-from datetime import datetime
-import time
-import pyexifinfo as exif
+import abc
 import functools
+import pyexifinfo as exif
+import time
 
-from app.utils import distinct_list
-
-__all__ = [
-    'DateRespector', 'MediaFactor', 'BaseParser'
-]
+from datetime import datetime
+from utils import distinct_list
 
 class DateRespector:
+    TIME_FORMAT = ['%Y:%m:%d %H:%M:%S', '%Y:%m:%d %H:%M:%S%z']
+
     def __init__(self, group, keys, by_first = False, by_min = True):
         self.group = group
         self.keys = keys
@@ -29,7 +28,7 @@ class DateRespector:
         values_ = list(dict.get(k) for k in self.full_keys())
         values = list(x for x in values_ if x != None)
         values = distinct_list(values)
-        dates = list(map(lambda v : BaseParser.__str_to_datetime__(v), values))
+        dates = list(map(lambda v : DateRespector.__str_to_datetime__(v), values))
         if len(dates) > 0:
             if self.by_first:
                 return dates[0]
@@ -50,6 +49,21 @@ class DateRespector:
     def gather_keys(*respectors):
         return functools.reduce((lambda a,b: a + b), list(DateRespector.flatten_keys(r) for r in respectors))
 
+    @staticmethod
+    def __str_to_datetime__(str):
+        pp = str.find('+')
+        if(pp > 0):
+            rest = str[pp:].replace(':', '')
+            str = str[0:pp] + rest
+
+        for f in DateRespector.TIME_FORMAT:
+            try:
+                return datetime.strptime(str, f);
+            except:
+                continue
+        return None
+
+
 class MediaFactor:
     def __init__(self, src, shot_datetime = None, exif_data = None):
         self.__exif_data__ = exif_data
@@ -58,7 +72,7 @@ class MediaFactor:
 
         self.dates = dict((k, v) for (k, v) in exif_data.items() if 'Date' in k)
         self.date_list = sorted(x[0].split(':') + [x[1], x[0]] for x in self.dates.items())
-        self.date_groups = MediaFactor.__group__(self.date_list, 0)
+        self.date_groups = MediaFactor.__group_by__(self.date_list, 0)
 
         self.datetime = shot_datetime
         self.warning = {}
@@ -84,7 +98,7 @@ class MediaFactor:
         return result
 
     def __group_str__(self, g, gs):
-        group_by_v = MediaFactor.__group__(gs, 2)
+        group_by_v = MediaFactor.__group_by__(gs, 2)
         value_strings = []
         for (v, samples) in group_by_v.items():
             same_value_keys = list(x[1] for x in samples)
@@ -94,30 +108,29 @@ class MediaFactor:
         return group_string
 
     @staticmethod
-    def __group__(sample_list, group_key):
-        mapped = {}
+    def __group_by__(sample_list, key_col):
+        grouped = {}
         for s in sample_list:
-            MediaFactor.__group_one_node__(mapped, s, group_key)
-        return mapped
+            MediaFactor.__group_one_sample__(grouped, s, key_col)
+        return grouped
 
     @staticmethod
-    def __group_one_node__(dict, sample, group_key):
-        grp = sample[group_key]
-        siblings = dict.get(grp)
+    def __group_one_sample__(grouped, sample, key_col):
+        grp = sample[key_col]
+        siblings = grouped.get(grp)
         if siblings == None:
             siblings = []
-            dict[grp] = siblings
+            grouped[grp] = siblings
         siblings.append(sample)
 
-class BaseParser:
+class BaseAnalysor:
     FILE_KEYS = DateRespector('File',
                               ['FileAccessDate',
                                'FileInodeChangeDate',
                                'FileModifyDate'], by_first=False, by_min=True)
-    TIME_FORMAT = ['%Y:%m:%d %H:%M:%S', '%Y:%m:%d %H:%M:%S%z']
 
     def known_date_keys(self):
-        return BaseParser.FILE_KEYS
+        return BaseAnalysor.FILE_KEYS
 
     def date_respectors(self):
         return []
@@ -143,16 +156,10 @@ class BaseParser:
                 return dt
         return None
 
-    @staticmethod
-    def __str_to_datetime__(str):
-        pp = str.find('+')
-        if(pp > 0):
-            rest = str[pp:].replace(':', '')
-            str = str[0:pp] + rest
-
-        for f in BaseParser.TIME_FORMAT:
-            try:
-                return datetime.strptime(str, f);
-            except:
-                continue
+    @abc.abstractmethod
+    def get_extensions(self):
         return None
+
+    def check_extension(self, ext):
+        exts = self.get_extensions()
+        return ext.lower() in exts

@@ -1,4 +1,4 @@
-from .__base__ import BaseParser, DateRespector
+from . import BaseAnalysor, DateRespector
 
 class _:
     EXIF_KEYS = DateRespector('EXIF',
@@ -18,49 +18,43 @@ class _:
                                     'SubSecModifyDate'])
 
 
-class JpgParser(BaseParser):
+class JpgAnalysor(BaseAnalysor):
 
     USELESS_DATE_KEYS=['ICC_Profile:ProfileDateTime',
-                       'IPTC:DigitalCreationDate',"IPTC:DateCreated",
-                    'Composite:GPSDateTime',
-                    'EXIF:GPSDateStamp']
+                       'IPTC:DigitalCreationDate',
+                       'IPTC:DateCreated',
+                       'Composite:GPSDateTime',
+                       'EXIF:GPSDateStamp']
     KNOWN_DATE_KEYS = DateRespector.gather_keys(
         _.EXIF_KEYS,
         _.XMP_KEYS,
         _.COMPOSITE_KEYS,
-        BaseParser.FILE_KEYS,
+        BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
 
-    FILE_SUFFIX = ['.jpg', '.jpeg']
-
-    @staticmethod
-    def check_extension(lowerExt):
-        return lowerExt in JpgParser.FILE_SUFFIX
+    def get_extensions(self):
+        return ['.jpg', '.jpeg']
 
     def known_date_keys(self):
-        return JpgParser.KNOWN_DATE_KEYS
+        return JpgAnalysor.KNOWN_DATE_KEYS
 
     def date_respectors(self):
         return [_.EXIF_KEYS,
                 _.XMP_KEYS,
                 _.COMPOSITE_KEYS]
 
-
-class PngParser(BaseParser):
+class PngAnalysor(BaseAnalysor):
     USELESS_DATE_KEYS=[]
     KNOWN_DATE_KEYS = DateRespector.gather_keys(
         _.XMP_KEYS,
-        BaseParser.FILE_KEYS,
+        BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
 
-    FILE_SUFFIX = ['.png']
-
-    @staticmethod
-    def check_extension(lowerExt):
-        return lowerExt in PngParser.FILE_SUFFIX
+    def get_extensions(self):
+        return ['.png']
 
     def known_date_keys(self):
-        return PngParser.KNOWN_DATE_KEYS
+        return PngAnalysor.KNOWN_DATE_KEYS
 
     def date_respectors(self):
         return [_.XMP_KEYS]

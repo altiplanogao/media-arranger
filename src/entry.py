@@ -2,13 +2,15 @@
 
 import sys
 
-from app import utils
-from app.app import App
-
+import utils
+from arranger.app import Application
+from arranger.conf import *
 
 def main(argv):
     # sys.setdefaultencoding('utf-8')
-    app = App(argv)
+    conf = parse_args()
+
+    app = Application(conf=conf)
     utils.Global.__APP__ = app
     app.run()
 

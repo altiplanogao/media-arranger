@@ -2,6 +2,7 @@ import os
 import os.path as path
 import sys
 import hashlib
+import logging
 
 __all__ = [
     'FileHandlers', 'DirectoryIterator', 'Global'
@@ -9,8 +10,6 @@ __all__ = [
 
 class FileHandlers:
     def on_file(self, file):
-        return
-    def on_duplicate_file(self, file):
         return
     def on_dir_enter(self, file):
         return
@@ -31,40 +30,6 @@ class DirectoryIterator:
             self.file_handlers.on_dir_leave(file)
         elif not path.exists(file):
             raise IOError('file not exist: "%s"' % file)
-
-class Logger:
-    def __init__(self, out, err):
-        self.out = out
-        self.err = err
-        self.out_file = None
-        self.err_file = None
-
-    def __enter__(self):
-        self.out_file = open(self.out, mode='a', encoding='utf-8')
-        self.err_file = open(self.err, mode='a', encoding='utf-8')
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.out_file.close()
-        self.err_file.close()
-
-    def info_line(self, line):
-        line += '\n'
-        self.info(line)
-
-    def info(self, line):
-        sys.stdout.write(line)
-        self.out_file.write(line)
-        self.out_file.flush()
-
-    def error_line(self, line):
-        line += '\n'
-        self.error(line)
-
-    def error(self, line):
-        sys.stderr.write(line)
-        self.err_file.write(line)
-        self.err_file.flush()
 
 class Accum:
     def __init__(self):
@@ -105,17 +70,8 @@ class Accum:
         return self.__duplicates__
 
 class Global:
-    __LOGGER__ = None
     __APP__ = None
     __accum__ = Accum()
-
-    @staticmethod
-    def logger():
-        return Global.__LOGGER__
-
-    @staticmethod
-    def set_logger(logger):
-        Global.__LOGGER__ = logger
 
     @staticmethod
     def accum():
