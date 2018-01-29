@@ -83,10 +83,12 @@ class __FileOpBase():
                 self.on_duplicated(src, op_ctx.duplication)
             else:
                 raise RuntimeError('Duplication not handled')
+            return None
         else:
             self.action_count += 1
-            self.do_op(src = op_ctx.src, dst= op_ctx.dest)
+            res = self.do_op(src = op_ctx.src, dst= op_ctx.dest)
             self.__set_acl__(file=op_ctx.dest)
+            return res
 
     @abc.abstractmethod
     def do_op(self, src, dst):
@@ -107,7 +109,8 @@ class FileMover(__FileOpBase):
     def do_op(self, src, dst):
         self.present_parent(dst)
         shutil.move(src=src, dst=dst)
-        self.logger.info('copy {0} -> {1}'.format(src, dst))
+        self.logger.info('move {0} -> {1}'.format(src, dst))
+        return dst
 
 
 class FileCopier(__FileOpBase):
@@ -118,5 +121,5 @@ class FileCopier(__FileOpBase):
         self.present_parent(dst)
         shutil.copy(src=src, dst=dst)
         self.logger.info('copy {0} -> {1}'.format(src, dst))
-
+        return dst
 

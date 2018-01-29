@@ -4,6 +4,9 @@ import pyexifinfo as exif
 import time
 
 from datetime import datetime
+
+import yaml
+
 from utils import distinct_list
 
 class DateRespector:
@@ -82,7 +85,7 @@ class MediaFactor:
     def set_warning(self, key, value):
         self.warning[key] = value
 
-    def __str__(self):
+    def __str2__(self):
         group_strings = []
         file_group_str = None
         for (g, gs) in self.date_groups.items():
@@ -96,6 +99,25 @@ class MediaFactor:
         full_time_string = ', '.join(group_strings)
         result = '{0}({1})[{2}], {3}'.format(self.src, self.file_size, self.datetime, full_time_string)
         return result
+
+    def __str__(self):
+        grouped_dates = {}
+        for (g, gs) in self.date_groups.items():
+            one_grp_by_date = self.__group_in_dict_by_date__(gs)
+            grouped_dates[g] = one_grp_by_date
+        grouped_dates['Final'] = self.datetime
+        res_obj = {
+            'File': '{0}({1})'.format(self.src, self.file_size)
+        }
+        res_obj['Time'] = grouped_dates
+        return yaml.dump(res_obj, default_flow_style=False, allow_unicode=True)
+
+    def __group_in_dict_by_date__(self, gs):
+        res = {}
+        group_by_v = MediaFactor.__group_by__(gs, 2)
+        for (dt, samples) in group_by_v.items():
+            res[dt] = list(s[3] for s in samples)
+        return res
 
     def __group_str__(self, g, gs):
         group_by_v = MediaFactor.__group_by__(gs, 2)

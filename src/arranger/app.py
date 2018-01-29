@@ -4,19 +4,35 @@ import os
 import shutil
 
 from arranger.conf import ArrangeMode, DuplicateAction
-from arranger.duplicate_handler import duplicate_droper, duplicate_mover, duplicate_skiper
+from arranger.duplicate_handler import duplicate_droper, duplicate_mover, duplicate_skiper, duplicate_handle_counter
 from arranger.file_op import FileCopier, FileMover
 from analysor.others import SkipAnalysor
 from analysor.analysors import get_analysor
-from utils import Global, DirectoryIterator, FileHandlers
+from os import path
+from utils import Global, DirectoryIterator, FileHandlers, sha256_checksum
+
 
 class MediaFileHandlers (FileHandlers):
-    ignorable_files = ['.DS_Store'];
-    def __init__(self, file_op, dest):
+    delete_able_files = ['.DS_Store'];
+    def __init__(self, file_op, dest, doubts):
         self.file_op = file_op
         self.dest = dest
+        self.doubts = doubts
         self.logger = logging.getLogger("file_process")
+        self.file_hits = 0
+        self.file_skip = 0
+        self.file_handled = 0
+        self.file_doubts = 0
         return
+
+    def __calc_doubt_dest__(self, factor):
+        src_noext, _ext = os.path.splitext(factor.src)
+
+        hash = sha256_checksum(factor.src)
+        bn = hash + _ext
+
+        dst = os.path.join(self.doubts, bn)
+        return dst
 
     def __calc_dest__(self, factor):
         src_noext, _ext = os.path.splitext(factor.src)
@@ -37,48 +53,72 @@ class MediaFileHandlers (FileHandlers):
         return factor.datetime != None
 
     def on_file(self, file):
+        if not path.isfile(file):
+            raise RuntimeError('{0} should be a file'.format(file))
+        self.file_hits += 1
+        self.logger.info('[Skip: {1}, Handled:{2}, Doubts:{3}, No.{0}] File: {4}'
+                         .format(self.file_hits, self.file_skip, self.file_handled, self.file_doubts, file))
         parser = get_analysor(file)
-        if parser != None:
+        if parser == None:
+            self.file_skip += 1
+        else:
             if isinstance(parser, SkipAnalysor):
                 self.logger.info('{0} skipped'.format(file))
+                self.file_skip += 1
                 return
             factor = parser.calc_factor(file)
-            self.logger.info(str(factor))
+            self.logger.info('[No.{0}] \n{1}'.format(self.file_hits, str(factor)))
             if self.__can_handle_factor__(factor):
                 new_dst = self.__calc_dest__(factor=factor)
                 self.file_op.op(src=file, dst=new_dst)
+                self.file_handled += 1
             else:
-                warning = '{0} (size: {1}) not handled'.format(factor.src, factor.file_size)
+                warning = 'UNHANDLED: {0} (size: {1}) has no arrange info'.format(factor.src, factor.file_size)
                 self.logger.warning(warning)
+                new_dst = self.__calc_doubt_dest__(factor=factor)
+                self.file_op.op(src=file, dst=new_dst)
+                self.file_doubts += 1
                 # return WarnAction(factor.src, msg=warning)
-
+        return
 
     def on_dir_leave(self, file):
         contains_content = False
         for f in os.listdir(file):
-            if f not in MediaFileHandlers.ignorable_files:
+            if f in MediaFileHandlers.delete_able_files:
+                self.logger.info("delete {0}".format(f))
+                os.remove(f)
+            else:
                 contains_content = True
-                break
         if not contains_content:
-            shutil.rmtree(file, True)
+            try:
+                self.logger.info("delete {0}".format(file))
+                os.rmdir(file)
+                # shutil.rmtree(file, True)
+            except Exception as e:
+                self.logger.warning('delete failed due to {0}'.format(e))
         return None
 
 class Application:
     def __init__(self, conf):
         self.conf = conf
         self.logger = logging.getLogger("app")
+        self.dup_counter = duplicate_handle_counter()
 
-        if conf.on_duplicate == DuplicateAction.SKIP:
-            self.on_duplicate = duplicate_skiper()
-        elif conf.on_duplicate == DuplicateAction.DROP:
-            self.on_duplicate = duplicate_droper()
-        elif conf.on_duplicate == DuplicateAction.MOVE:
-            self.on_duplicate = duplicate_mover(conf.duplicate_dir)
+        if conf.arrange_mode == ArrangeMode.MOVE:
+            if conf.duplicate_action == DuplicateAction.SKIP:
+                self.on_duplicate = duplicate_skiper(counter=self.dup_counter)
+            elif conf.duplicate_action == DuplicateAction.DROP:
+                self.on_duplicate = duplicate_droper(counter=self.dup_counter)
+            elif conf.duplicate_action == DuplicateAction.MOVE:
+                self.on_duplicate = duplicate_mover(conf.duplicate_dir,counter=self.dup_counter)
+            else:
+                raise RuntimeError("Duplication handler not set")
         else:
-            raise RuntimeError("Duplication handler not set")
-        if conf.arrange_method == ArrangeMode.COPY:
+            self.on_duplicate = duplicate_skiper(counter=self.dup_counter)
+
+        if conf.arrange_mode == ArrangeMode.COPY:
             self.file_op = FileCopier(acl_conf=conf.acl, on_duplicated=self.on_duplicate.op)
-        elif conf.arrange_method == ArrangeMode.MOVE:
+        elif conf.arrange_mode == ArrangeMode.MOVE:
             self.file_op = FileMover(acl_conf=conf.acl, on_duplicated=self.on_duplicate.op)
         else:
             raise RuntimeError("Arrange method not set")
@@ -86,10 +126,15 @@ class Application:
     def run(self):
         self.logger.info("Configuration: {}".format((json.dumps(self.conf.to_dict(), ensure_ascii=False, indent=2))))
 
-        directory_iterator=DirectoryIterator(MediaFileHandlers(self.file_op, self.conf.dest))
+        mfh = MediaFileHandlers(self.file_op, dest=self.conf.dest, doubts=self.conf.doubts)
+        directory_iterator=DirectoryIterator(mfh)
         for src in self.conf.src:
             try:
                 directory_iterator.iterate(file=src)
             except IOError as e:
-                Global.logger().error_line(str(e))
-        Global.logger().info_line('Result: {0}'.format(Global.accum()))
+                self.logger.error(str(e))
+        self.logger.info('[Skip: {0}, Handled:{1}, Doubts:{2}, Total.{3}]'
+                         .format(mfh.file_skip, mfh.file_handled, mfh.file_doubts, mfh.file_hits))
+
+        self.logger.info('Duplicates handled: [Skip: {0}, Move:{1}, Delete:{2}, Total.{3}]'
+                         .format(self.dup_counter.skip(), self.dup_counter.move(), self.dup_counter.drop(), self.dup_counter.total()))

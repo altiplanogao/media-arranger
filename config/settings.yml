@@ -3,6 +3,7 @@
 source:
   - "/appspace/src"
 destination: "/appspace/dst"
+doubts: "/appspace/dbt"
 log_dir: "/appspace/logs"
 
 # arrage_method options: COPY, MOVE
@@ -13,8 +14,8 @@ duplicate_dest_dir: "/appspace/dup"
 
 respect_mtime: "no"
 
-chown: "no"
-chown_uid: 1
-chown_gid: 1
-file_mod: 0440
-dir_mod: 0551
+acl: "no"
+acl_uid: 1
+acl_gid: 1
+acl_filemod: 0440
+acl_dirmod: 0551
