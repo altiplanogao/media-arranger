@@ -15,7 +15,7 @@ class OpContext:
         return self.duplication != None
 
 class __FileOpBase():
-    def __init__(self, acl_conf, on_duplicated, hash_check = True, rename_pattern = '(%d)'):
+    def __init__(self, acl_conf, on_duplicated, hash_check = True, rename_pattern = '-%d'):
         self.acl_conf = acl_conf
         self.on_duplicated = on_duplicated
         self.hash_check = hash_check

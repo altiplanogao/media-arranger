@@ -2,7 +2,10 @@
 
 import sys
 
-sys.path.remove('/usr/local/lib/python2.7/dist-packages')
+#it seems that on some machine, python2 path would cause library conflict
+p2path = list(x for x in sys.path if x.count('python2') > 0)
+for p in p2path:
+    sys.path.remove(p)
 
 import utils
 from arranger.app import Application

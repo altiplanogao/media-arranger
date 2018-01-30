@@ -23,9 +23,12 @@ class MediaFileHandlers (FileHandlers):
         self.file_skip = 0
         self.file_handled = 0
         self.file_doubts = 0
+        self.file_unhandled = 0
         return
 
     def __calc_doubt_dest__(self, factor):
+        if self.doubts == None:
+            return None
         src_noext, _ext = os.path.splitext(factor.src)
 
         hash = sha256_checksum(factor.src)
@@ -56,8 +59,8 @@ class MediaFileHandlers (FileHandlers):
         if not path.isfile(file):
             raise RuntimeError('{0} should be a file'.format(file))
         self.file_hits += 1
-        self.logger.info('[Skip: {1}, Handled:{2}, Doubts:{3}, No.{0}] File: {4}'
-                         .format(self.file_hits, self.file_skip, self.file_handled, self.file_doubts, file))
+        self.logger.info('[Skip: {1}, Handled:{2}, Doubts:{3}, Unhandled:{4}, No.{0}] File: {5}'
+                         .format(self.file_hits, self.file_skip, self.file_handled, self.file_doubts, self.file_unhandled, file))
         parser = get_analysor(file)
         if parser == None:
             self.file_skip += 1
@@ -67,26 +70,36 @@ class MediaFileHandlers (FileHandlers):
                 self.file_skip += 1
                 return
             factor = parser.calc_factor(file)
+            dates = factor.dates
             self.logger.info('[No.{0}] \n{1}'.format(self.file_hits, str(factor)))
             if self.__can_handle_factor__(factor):
                 new_dst = self.__calc_dest__(factor=factor)
                 self.file_op.op(src=file, dst=new_dst)
                 self.file_handled += 1
             else:
-                warning = 'UNHANDLED: {0} (size: {1}) has no arrange info'.format(factor.src, factor.file_size)
-                self.logger.warning(warning)
                 new_dst = self.__calc_doubt_dest__(factor=factor)
-                self.file_op.op(src=file, dst=new_dst)
-                self.file_doubts += 1
+                if new_dst != None:
+                    warning = 'DOUBT: {0} (size: {1}) moves to {2}'.format(factor.src, factor.file_size, new_dst)
+                    self.logger.warning(warning)
+                    self.file_op.op(src=file, dst=new_dst)
+                    self.file_doubts += 1
+                else:
+                    warning = 'UNHANDLED: {0} (size: {1}) has no arrange info'.format(factor.src, factor.file_size)
+                    self.logger.warning(warning)
+                    self.file_unhandled += 1
                 # return WarnAction(factor.src, msg=warning)
+        return
+
+    def on_dir_enter(self, file):
         return
 
     def on_dir_leave(self, file):
         contains_content = False
         for f in os.listdir(file):
             if f in MediaFileHandlers.delete_able_files:
-                self.logger.info("delete {0}".format(f))
-                os.remove(f)
+                full_filename = path.join(file, f)
+                self.logger.info("delete {0}".format(full_filename))
+                os.remove(full_filename)
             else:
                 contains_content = True
         if not contains_content:
@@ -133,8 +146,8 @@ class Application:
                 directory_iterator.iterate(file=src)
             except IOError as e:
                 self.logger.error(str(e))
-        self.logger.info('[Skip: {0}, Handled:{1}, Doubts:{2}, Total.{3}]'
-                         .format(mfh.file_skip, mfh.file_handled, mfh.file_doubts, mfh.file_hits))
+        self.logger.info('[Skip: {0}, Handled:{1}, Doubts:{2}, Unhandled:{3}, Total.{4}]'
+                         .format(mfh.file_skip, mfh.file_handled, mfh.file_doubts, mfh.file_unhandled, mfh.file_hits))
 
         self.logger.info('Duplicates handled: [Skip: {0}, Move:{1}, Delete:{2}, Total.{3}]'
                          .format(self.dup_counter.skip(), self.dup_counter.move(), self.dup_counter.drop(), self.dup_counter.total()))

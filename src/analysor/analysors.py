@@ -16,6 +16,7 @@ def __gen_ext_to_parser__():
         MovAnalysor(),
         Mp4Analysor(),
         MtsAnalysor(),
+        V3gpAnalysor(),
         SkipAnalysor(),
         UnknownAnalysor()
     ]

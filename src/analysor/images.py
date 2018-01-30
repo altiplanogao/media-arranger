@@ -2,9 +2,9 @@ from . import BaseAnalysor, DateRespector
 
 class _:
     EXIF_KEYS = DateRespector('EXIF',
-                              ['CreateDate',
-                               'DateTimeOriginal',
-                               'ModifyDate'])
+                              ['DateTimeOriginal',
+                               'CreateDate',
+                               'ModifyDate'], by_first=True, by_min=False)
     XMP_KEYS = DateRespector('XMP',
                              ['CreateDate',
                               'ModifyDate',
@@ -24,7 +24,8 @@ class JpgAnalysor(BaseAnalysor):
                        'IPTC:DigitalCreationDate',
                        'IPTC:DateCreated',
                        'Composite:GPSDateTime',
-                       'EXIF:GPSDateStamp']
+                       'EXIF:GPSDateStamp',
+                       'MakerNotes:DateDisplayFormat']
     KNOWN_DATE_KEYS = DateRespector.gather_keys(
         _.EXIF_KEYS,
         _.XMP_KEYS,

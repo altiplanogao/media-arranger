@@ -63,6 +63,29 @@ class MovAnalysor(BaseAnalysor):
             _.QT_TRACK_DATE_KEYS,
             _.QT_CONT_DATE_KEY]
 
+class V3gpAnalysor(BaseAnalysor):
+    USELESS_DATE_KEYS=[]
+    KNOWN_DATE_KEYS = DateRespector.gather_keys(
+        _.QT_MEDIA_DATE_KEYS,
+        _.QT_TRACK_DATE_KEYS,
+        _.QT_MC_DATE_KEYS,
+        _.QT_CONT_DATE_KEY,
+        BaseAnalysor.FILE_KEYS,
+        USELESS_DATE_KEYS)
+
+    def get_extensions(self):
+        return ['.3gp']
+
+    def known_date_keys(self):
+        return MovAnalysor.KNOWN_DATE_KEYS
+
+    def date_respectors(self):
+        return [
+            _.QT_MC_DATE_KEYS,
+            _.QT_MEDIA_DATE_KEYS,
+            _.QT_TRACK_DATE_KEYS,
+            _.QT_CONT_DATE_KEY]
+
 class MtsAnalysor(BaseAnalysor):
     USELESS_DATE_KEYS=['']
     KNOWN_DATE_KEYS = DateRespector.gather_keys(
