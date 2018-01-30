@@ -1,16 +1,30 @@
-FROM python:3.4-slim
+ARG PYTHON3_IMG=python:3.4-slim
+#ARG PYTHON3_IMG=armhf/python:3.6-slim
+FROM ${PYTHON3_IMG}
 
-RUN mkdir -p /appspace/config
-ADD ./app/config/settings.yml /appspace/config
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    apt-get update && apt-get install -y curl && mkdir -p /appspace/config
+ADD ./config/settings.yml /appspace/config
 VOLUME ["/appspace/src", "/appspace/dst", "/appspace/logs", "/appspace/config"]
 
-ARG EXIF_TOOL_URL=https://www.sno.phy.queensu.ca/~phil/exiftool/Image-ExifTool-10.76.tar.gz
-ADD ${EXIF_TOOL_URL} /
-RUN tar xzf /Image-ExifTool-10.76.tar.gz
-ENV PATH "/Image-ExifTool-10.76:${PATH}"
+ARG URL_TMPL=https://www.sno.phy.queensu.ca/~phil/exiftool/
+RUN /bin/bash -c "export EXIF_TOOL_FN=`curl -s ${URL_TMPL} | grep ".tar.gz" | sed 's|.*href="\(.*\)\.tar\.gz".*|\1|g'` && \
+    echo Tool name: \${EXIF_TOOL_FN}  && \
+    export EXIF_TOOL_URL=${URL_TMPL}\${EXIF_TOOL_FN}.tar.gz && \
+    echo Url: \${EXIF_TOOL_URL} && \
+    curl -O \${EXIF_TOOL_URL} && \
+    tar xzf \${EXIF_TOOL_FN}.tar.gz && mv \${EXIF_TOOL_FN} Image-ExifTool && rm -rf \${EXIF_TOOL_FN}.tar.gz && \
+     ls -la"
 
-ADD . /media-arranger
+ENV PATH "/Image-ExifTool:${PATH}"
+RUN exiftool -ver
+
+ADD ./src /media-arranger
 RUN pip install --trusted-host pypi.python.org -r /media-arranger/requirements.txt
 
+COPY ./docker-entry.sh /media-arranger/
+RUN chmod +x /media-arranger/*.sh
 WORKDIR /media-arranger
-CMD ["python", "entry.py", "-s", "/appspace/src", "-d", "/appspace/dst", "--log-dir", "/appspace/logs", "-c", "/appspace/config"]
+
+ENTRYPOINT ["/media-arranger/docker-entry.sh"]
+CMD ["python", "entry.py", "-c", "/appspace/config"]

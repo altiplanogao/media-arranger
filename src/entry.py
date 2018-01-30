@@ -2,8 +2,6 @@
 
 import sys
 
-sys.path.remove('/usr/local/lib/python2.7/dist-packages')
-
 import utils
 from arranger.app import Application
 from arranger.conf import *
