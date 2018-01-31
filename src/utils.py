@@ -82,7 +82,7 @@ def distinct_list(list):
     for v in list:
         if len(distincted) == 0:
             distincted.append(v)
-        elif v != distincted[len(distincted) - 1]:
+        elif v not in distincted:
             distincted.append(v)
     return distincted
 

@@ -9,15 +9,16 @@ from arranger.file_op import FileCopier, FileMover
 from analysor.others import SkipAnalysor
 from analysor.analysors import get_analysor
 from os import path
-from utils import Global, DirectoryIterator, FileHandlers, sha256_checksum
+from utils import DirectoryIterator, FileHandlers, sha256_checksum
 
 
 class MediaFileHandlers (FileHandlers):
     delete_able_files = ['.DS_Store'];
-    def __init__(self, file_op, dest, doubts):
+    def __init__(self, file_op, dest, doubts, duplicate_counter=None):
         self.file_op = file_op
         self.dest = dest
         self.doubts = doubts
+        self.duplicate_counter = duplicate_counter
         self.logger = logging.getLogger("file_process")
         self.file_hits = 0
         self.file_skip = 0
@@ -59,8 +60,8 @@ class MediaFileHandlers (FileHandlers):
         if not path.isfile(file):
             raise RuntimeError('{0} should be a file'.format(file))
         self.file_hits += 1
-        self.logger.info('[Skip: {1}, Handled:{2}, Doubts:{3}, Unhandled:{4}, No.{0}] File: {5}'
-                         .format(self.file_hits, self.file_skip, self.file_handled, self.file_doubts, self.file_unhandled, file))
+        self.logger.info('[Skip: {1}, Handled:{2}, Doubts:{3}, Unhandled:{4}, No.{0}][{6}] File: {5}'
+                         .format(self.file_hits, self.file_skip, self.file_handled, self.file_doubts, self.file_unhandled, file, str(self.duplicate_counter)))
         parser = get_analysor(file)
         if parser == None:
             self.file_skip += 1
@@ -139,7 +140,7 @@ class Application:
     def run(self):
         self.logger.info("Configuration: {}".format((json.dumps(self.conf.to_dict(), ensure_ascii=False, indent=2))))
 
-        mfh = MediaFileHandlers(self.file_op, dest=self.conf.dest, doubts=self.conf.doubts)
+        mfh = MediaFileHandlers(self.file_op, dest=self.conf.dest, doubts=self.conf.doubts, duplicate_counter=self.dup_counter)
         directory_iterator=DirectoryIterator(mfh)
         for src in self.conf.src:
             try:

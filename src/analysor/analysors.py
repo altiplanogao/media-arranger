@@ -2,6 +2,7 @@ import os
 
 from .images import *
 from .videos import *
+from .audios import *
 from .others import SkipAnalysor, UnknownAnalysor
 
 __all__ = {
@@ -13,10 +14,15 @@ def __gen_ext_to_parser__():
     parsers = [
         JpgAnalysor(),
         PngAnalysor(),
+        GifAnalysor(),
+
+        MpgAnalysor(),
         MovAnalysor(),
         Mp4Analysor(),
         MtsAnalysor(),
-        V3gpAnalysor(),
+
+        Mp3Analysor(),
+
         SkipAnalysor(),
         UnknownAnalysor()
     ]

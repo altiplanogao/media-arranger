@@ -22,6 +22,9 @@ class duplicate_handle_counter:
     def total(self):
         return self._skip + self._drop + self._move
 
+    def __str__(self):
+        return 'duplicates[skip.{0} drop.{1} move.{2}, total.{3}]'.format(self._skip, self._drop, self._move, self.total())
+
 
 class duplicate_handler:
     def __init__(self, counter = duplicate_handle_counter()):

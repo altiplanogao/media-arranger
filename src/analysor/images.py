@@ -1,21 +1,20 @@
-from . import BaseAnalysor, DateRespector
+from . import BaseAnalysor, DateRespector, DateRespectors
+
 
 class _:
     EXIF_KEYS = DateRespector('EXIF',
                               ['DateTimeOriginal',
                                'CreateDate',
                                'ModifyDate'], by_first=True, by_min=False)
-    XMP_KEYS = DateRespector('XMP',
-                             ['CreateDate',
-                              'ModifyDate',
-                              'MetadataDate',
-                              'DateCreated'])
+
     COMPOSITE_KEYS = DateRespector('Composite',
                                    ['SubSecCreateDate',
                                     'DateTimeCreated',
+                                    'DateTimeOriginal',
                                     'DigitalCreationDateTime',
                                     'SubSecDateTimeOriginal',
                                     'SubSecModifyDate'])
+    MARK_KEYS = DateRespector('MakerNotes',['SonyDateTime'])
 
 
 class JpgAnalysor(BaseAnalysor):
@@ -24,12 +23,19 @@ class JpgAnalysor(BaseAnalysor):
                        'IPTC:DigitalCreationDate',
                        'IPTC:DateCreated',
                        'Composite:GPSDateTime',
+                       'Composite:DateCreated',
                        'EXIF:GPSDateStamp',
-                       'MakerNotes:DateDisplayFormat']
+                       'FlashPix:ExtensionCreateDate',
+                       'FlashPix:ExtensionModifyDate',
+                       'MakerNotes:Date',
+                       'MakerNotes:DateStampMode',
+                       'MakerNotes:DateDisplayFormat',
+                       'MakerNotes:DateTimeStamp']
     KNOWN_DATE_KEYS = DateRespector.gather_keys(
         _.EXIF_KEYS,
-        _.XMP_KEYS,
+        DateRespectors.XMP_KEYS,
         _.COMPOSITE_KEYS,
+        _.MARK_KEYS,
         BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
 
@@ -41,13 +47,13 @@ class JpgAnalysor(BaseAnalysor):
 
     def date_respectors(self):
         return [_.EXIF_KEYS,
-                _.XMP_KEYS,
+                DateRespectors.XMP_KEYS,
                 _.COMPOSITE_KEYS]
 
 class PngAnalysor(BaseAnalysor):
     USELESS_DATE_KEYS=[]
     KNOWN_DATE_KEYS = DateRespector.gather_keys(
-        _.XMP_KEYS,
+        DateRespectors.XMP_KEYS,
         BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
 
@@ -58,5 +64,23 @@ class PngAnalysor(BaseAnalysor):
         return PngAnalysor.KNOWN_DATE_KEYS
 
     def date_respectors(self):
-        return [_.XMP_KEYS]
+        return [DateRespectors.XMP_KEYS]
 
+class GifAnalysor(BaseAnalysor):
+    USELESS_DATE_KEYS=[]
+    KNOWN_DATE_KEYS = DateRespector.gather_keys(
+        DateRespectors.XMP_KEYS,
+        BaseAnalysor.FILE_KEYS,
+        USELESS_DATE_KEYS)
+
+    def get_extensions(self):
+        return ['.gif']
+
+    def known_date_keys(self):
+        return GifAnalysor.KNOWN_DATE_KEYS
+
+    def date_respectors(self):
+        return [DateRespectors.XMP_KEYS]
+
+    def pre_return_factor(self, factor):
+        super().pre_return_factor(factor)

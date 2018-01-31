@@ -3,6 +3,7 @@ import functools
 import pyexifinfo as exif
 import time
 
+from copy import copy, deepcopy
 from datetime import datetime
 
 import yaml
@@ -32,6 +33,7 @@ class DateRespector:
         values = list(x for x in values_ if x != None)
         values = distinct_list(values)
         dates = list(map(lambda v : DateRespector.__str_to_datetime__(v), values))
+        dates = list(x for x in dates if x != None)
         if len(dates) > 0:
             if self.by_first:
                 return dates[0]
@@ -66,7 +68,15 @@ class DateRespector:
                 continue
         return None
 
-
+class DateRespectors:
+    XMP_KEYS = DateRespector('XMP',
+                             ['CreateDate',
+                              'ModifyDate',
+                              'MetadataDate',
+                              'PantryMetadataDate',
+                              'DateCreated',
+                              'DateTimeOriginal',
+                              'DateTimeDigitized'])
 class MediaFactor:
     def __init__(self, src, shot_datetime = None, exif_data = None):
         self.__exif_data__ = exif_data
@@ -158,7 +168,7 @@ class BaseAnalysor:
         return []
 
     def calc_factor(self, filename):
-        exif_data = exif.information(filename)
+        exif_data = self._get_exif_(filename)
         factor = MediaFactor(src=filename, exif_data=exif_data)
 
         unknown_data = dict((x[3],x[2]) for x in factor.date_list if x[3] not in self.known_date_keys())
@@ -168,7 +178,57 @@ class BaseAnalysor:
         shotDt = self.determine_datetime(factor)
         if shotDt != None:
             factor.set_datetime(shotDt)
+        self.pre_return_factor(factor=factor)
         return factor
+    def pre_return_factor(self, factor):
+        pass
+
+    _KEY_MAPPING_ = {
+        "ExifIFD": 'EXIF',
+        "IFD0": 'EXIF',
+        "IFD1": 'EXIF',
+        "InteropIFD": 'EXIF',
+        "System": 'File'
+    }
+
+    @staticmethod
+    def _key_mapping_(make):
+        km = deepcopy(BaseAnalysor._KEY_MAPPING_)
+        maker_key = None
+        if make in ['OLYMPUS CORPORATION', 'OLYMPUS IMAGING CORP.']:
+            maker_key = 'Olympus'
+        else:
+            raise RuntimeError('Unknown maker: {0}'.format(make))
+
+        if maker_key:
+            km[maker_key] = 'MakerNotes'
+        return km
+
+    @staticmethod
+    def _translate_key_v_(dict, key_map, key):
+        val = dict.get(key)
+        (kg, k) = key.split(':', 1)
+        kgm = key_map.get(kg)
+        if kgm:
+            key = key.replace(kg, kgm, 1)
+        return (key, val)
+
+    def _get_exif_(self, filename):
+        try:
+            orig_exif = exif.information(filename)
+            return orig_exif
+        except Exception as e:
+            pass
+
+        import xmltodict
+        raw_xml_obj = xmltodict.parse(exif.get_xml(filename))
+        xml_obj = raw_xml_obj['rdf:RDF']['rdf:Description']
+        maker_des = xml_obj['IFD0:ImageDescription']
+        make = xml_obj['IFD0:Make']
+        key_mapping = BaseAnalysor._key_mapping_(make)
+        trans_xml_obj = dict(BaseAnalysor._translate_key_v_(xml_obj,key_mapping,k) for k in xml_obj.keys() if not k.startswith('@'))
+
+        return trans_xml_obj
 
     def determine_datetime(self, factor):
         dict = factor.dates
