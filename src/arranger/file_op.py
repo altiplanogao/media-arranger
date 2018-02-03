@@ -96,7 +96,7 @@ class __FileOpBase():
     def __set_acl__(self, file):
         if self.acl_conf:
             os.chown(file, self.acl_conf.uid, self.acl_conf.gid)
-            if self.acl.file_mod != 0:
+            if self.acl_conf.file_mod != 0:
                 os.chmod(file, self.acl_conf.file_mod)
 
 
