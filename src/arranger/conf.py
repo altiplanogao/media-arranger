@@ -103,6 +103,11 @@ class AclConf:
         self.gid = ArgKeys.ACL_GID_DEFAULT_VAL
         self.file_mod = ArgKeys.ACL_FILE_MOD_DEFAULT_VAL
         self.dir_mod = ArgKeys.ACL_DIR_MOD_DEFAULT_VAL
+    def to_dict(self):
+        result = self.__dict__.copy()
+        result["dir_mod"]=oct(self.dir_mod)
+        result["file_mod"] =oct(self.file_mod),
+        return result
 
 class Configure:
     def __init__(self):
@@ -239,6 +244,7 @@ class Configure:
 
     def to_dict(self):
         result = self.__dict__.copy()
+        result['acl'] = self.acl.to_dict()
         result['work directory'] = os.getcwd()
         return result
 
