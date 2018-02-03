@@ -71,7 +71,7 @@ class __FileOpBase():
             self.mkdir(parent)
         os.mkdir(dir)
         if self.acl_conf:
-            os.acl(dir, self.acl_conf.acl_uid, self.acl_conf.acl_gid)
+            os.chown(dir, self.acl_conf.acl_uid, self.acl_conf.acl_gid)
             if self.acl_conf.dir_mod != 0:
                 os.chmod(dir, self.acl_conf.dir_mod)
 
