@@ -113,7 +113,9 @@ class Configure:
         self.log_file = None
 
         self.arrange_mode = ArgKeys.ARRANGE_MODE_DEFAULT_VAL
+        self.arrange_mode_str = self.arrange_mode.name
         self.duplicate_action = DuplicateAction.SKIP
+        self.duplicate_action_str = self.duplicate_action.name
         self.duplicate_dest_dir = None
 
         self.respect_mtime = 'no'
@@ -130,8 +132,10 @@ class Configure:
         self.log_file = path.join(log_dir, nowstr + '.log')
     def _set_arrange_mode(self, am):
         self.arrange_mode = ArgKeys.get_arrange_mode(am)
+        self.arrange_mode_str = self.arrange_mode.name
     def _set_duplicate_action(self, da):
         self.duplicate_action = ArgKeys.get_duplicate_action(da)
+        self.duplicate_action_str = self.duplicate_action.name
     def _set_duplicate_dest_dir(self, ddd):
         self.duplicate_dest_dir = ddd
     def _set_respect_mtime(self, mtime):
