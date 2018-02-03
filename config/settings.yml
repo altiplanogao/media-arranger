@@ -3,14 +3,14 @@
 source:
   - "/appspace/src"
 destination: "/appspace/dst"
-doubts: "/appspace/dbt"
+doubts: "/appspace/dst/doubts"
 log_dir: "/appspace/logs"
 
 # arrage_method options: COPY, MOVE
 arrange_mode: "COPY"
 # on_duplicate: "SKIP', 'DROP', 'MOVE', only effected on arrange_mode == "MOVE"
 duplicate_action: "DROP"
-duplicate_dest_dir: "/appspace/dup"
+duplicate_dest_dir: "/appspace/dst/duplicate"
 
 respect_mtime: "no"
 

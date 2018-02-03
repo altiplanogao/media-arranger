@@ -268,6 +268,7 @@ def __make_parser__():
                         help='whether use mtime on missing exif time')
 
     parser.add_argument(ArgKeys.as_arg_key(ArgKeys.ACL_KEY),
+                        choices=['yes', 'no'],
                         help='whether use acl control')
     parser.add_argument(ArgKeys.as_arg_key(ArgKeys.ACL_GID_KEY),
                         help='group id for media files')
