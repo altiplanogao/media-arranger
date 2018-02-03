@@ -30,6 +30,9 @@ class MpgAnalysor(BaseAnalysor):
         BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
 
+    def __init__(self, respect_mtime):
+        super().__init__(respect_mtime=respect_mtime)
+
     def get_extensions(self):
         return ['.mpg']
 
@@ -51,6 +54,9 @@ class Mp4Analysor(BaseAnalysor):
         _.QT_MC_DATE_KEYS,
         BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
+
+    def __init__(self, respect_mtime):
+        super().__init__(respect_mtime=respect_mtime)
 
     def get_extensions(self):
         return ['.mp4', '.m4a']
@@ -74,6 +80,9 @@ class MovAnalysor(BaseAnalysor):
         BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
 
+    def __init__(self, respect_mtime):
+        super().__init__(respect_mtime=respect_mtime)
+
     def get_extensions(self):
         return ['.mov', '.3gp']
 
@@ -93,6 +102,9 @@ class MtsAnalysor(BaseAnalysor):
         _.H264_MEDIA_DATE_KEYS,
         BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
+
+    def __init__(self, respect_mtime):
+        super().__init__(respect_mtime=respect_mtime)
 
     def get_extensions(self):
         return ['.mts']

@@ -1,40 +1,45 @@
 import os
 
+from analysor import GenericAnalysor
 from .images import *
 from .videos import *
 from .audios import *
 from .others import SkipAnalysor, UnknownAnalysor
 
 __all__ = {
-    'get_analysor'
+    'analysors'
 }
 
-def __gen_ext_to_parser__():
-    ext_to_parser = {}
-    parsers = [
-        JpgAnalysor(),
-        PngAnalysor(),
-        GifAnalysor(),
+class analysors:
+    def __init__(self, respect_mtime):
+        self.respect_mtime = respect_mtime
+        ext_to_parser = {}
+        parsers = [
+            JpgAnalysor(respect_mtime),
+            PngAnalysor(respect_mtime),
+            GifAnalysor(respect_mtime),
 
-        MpgAnalysor(),
-        MovAnalysor(),
-        Mp4Analysor(),
-        MtsAnalysor(),
+            MpgAnalysor(respect_mtime),
+            MovAnalysor(respect_mtime),
+            Mp4Analysor(respect_mtime),
+            MtsAnalysor(respect_mtime),
 
-        Mp3Analysor(),
+            Mp3Analysor(respect_mtime),
 
-        SkipAnalysor(),
-        UnknownAnalysor()
-    ]
-    for p in parsers:
-        for ext in p.get_extensions():
-            ext_to_parser[ext] = p
-    return ext_to_parser
+            SkipAnalysor(respect_mtime),
+            UnknownAnalysor(respect_mtime)
+        ]
+        for p in parsers:
+            for ext in p.get_extensions():
+                ext_to_parser[ext] = p
+        self.ext_to_parser = ext_to_parser
+        self.generic = GenericAnalysor(respect_mtime)
 
-__ext_to_parser__ = __gen_ext_to_parser__()
+    def get_analysor(self, filename):
+        fn, file_extension = os.path.splitext(filename)
+        lowerExt = file_extension.lower()
+        p = self.ext_to_parser.get(lowerExt)
+        return p
 
-def get_analysor(filename):
-    fn, file_extension = os.path.splitext(filename)
-    lowerExt = file_extension.lower()
-    p = __ext_to_parser__.get(lowerExt)
-    return p
+    def get_generic(self):
+        return self.generic

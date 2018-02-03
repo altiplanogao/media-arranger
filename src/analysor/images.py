@@ -13,7 +13,8 @@ class _:
                                     'DateTimeOriginal',
                                     'DigitalCreationDateTime',
                                     'SubSecDateTimeOriginal',
-                                    'SubSecModifyDate'])
+                                    'SubSecModifyDate',
+                                    'SubSecCreateDate'])
     MARK_KEYS = DateRespector('MakerNotes',['SonyDateTime'])
 
 
@@ -39,8 +40,11 @@ class JpgAnalysor(BaseAnalysor):
         BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
 
+    def __init__(self, respect_mtime):
+        super().__init__(respect_mtime=respect_mtime)
+
     def get_extensions(self):
-        return ['.jpg', '.jpeg']
+        return ['.jpg', '.jpeg', '.nef']
 
     def known_date_keys(self):
         return JpgAnalysor.KNOWN_DATE_KEYS
@@ -49,6 +53,8 @@ class JpgAnalysor(BaseAnalysor):
         return [_.EXIF_KEYS,
                 DateRespectors.XMP_KEYS,
                 _.COMPOSITE_KEYS]
+    def pre_return_factor(self, factor):
+        super().pre_return_factor(factor)
 
 class PngAnalysor(BaseAnalysor):
     USELESS_DATE_KEYS=[]
@@ -56,6 +62,9 @@ class PngAnalysor(BaseAnalysor):
         DateRespectors.XMP_KEYS,
         BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
+
+    def __init__(self, respect_mtime):
+        super().__init__(respect_mtime=respect_mtime)
 
     def get_extensions(self):
         return ['.png']
@@ -72,6 +81,9 @@ class GifAnalysor(BaseAnalysor):
         DateRespectors.XMP_KEYS,
         BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
+
+    def __init__(self, respect_mtime):
+        super().__init__(respect_mtime=respect_mtime)
 
     def get_extensions(self):
         return ['.gif']

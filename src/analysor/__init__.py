@@ -87,6 +87,7 @@ class MediaFactor:
         self.date_list = sorted(x[0].split(':') + [x[1], x[0]] for x in self.dates.items())
         self.date_groups = MediaFactor.__group_by__(self.date_list, 0)
 
+        self.mtime = DateRespector.__str_to_datetime__(exif_data.get('File:FileModifyDate'))
         self.datetime = shot_datetime
         self.warning = {}
 
@@ -161,8 +162,11 @@ class BaseAnalysor:
                                'FileInodeChangeDate',
                                'FileModifyDate'], by_first=False, by_min=True)
 
+    def __init__(self, respect_mtime):
+        self.respect_mtime=respect_mtime
+
     def known_date_keys(self):
-        return BaseAnalysor.FILE_KEYS
+        return DateRespector.gather_keys(BaseAnalysor.FILE_KEYS)
 
     def date_respectors(self):
         return []
@@ -236,6 +240,8 @@ class BaseAnalysor:
             dt = resp.determine_date(dict)
             if dt != None:
                 return dt
+        if self.respect_mtime:
+            return factor.mtime
         return None
 
     @abc.abstractmethod
@@ -245,3 +251,10 @@ class BaseAnalysor:
     def check_extension(self, ext):
         exts = self.get_extensions()
         return ext.lower() in exts
+
+class GenericAnalysor(BaseAnalysor):
+    def date_respectors(self):
+        return [BaseAnalysor.FILE_KEYS]
+
+    def __init__(self, respect_mtime):
+        super().__init__(respect_mtime=respect_mtime)

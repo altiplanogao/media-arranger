@@ -21,6 +21,9 @@ class Mp3Analysor(BaseAnalysor):
         BaseAnalysor.FILE_KEYS,
         USELESS_DATE_KEYS)
 
+    def __init__(self, respect_mtime):
+        super().__init__(respect_mtime=respect_mtime)
+
     def get_extensions(self):
         return ['.mp3']
 
