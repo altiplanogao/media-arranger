@@ -27,4 +27,4 @@ RUN chmod +x /media-arranger/*.sh
 WORKDIR /media-arranger
 
 ENTRYPOINT ["/media-arranger/docker-entry.sh"]
-CMD ["python", "entry.py", "-c", "/appspace/config"]
+# CMD ["python", "entry.py", "-c", "/appspace/config"]
