@@ -243,7 +243,10 @@ class Configure:
 
     def to_dict(self):
         result = self.__dict__.copy()
-        result['acl'] = self.acl.to_dict()
+        if self.acl:
+            result['acl'] = 'None'
+        else:
+            result['acl'] = self.acl.to_dict()
         result['work directory'] = os.getcwd()
         return result
 
