@@ -243,7 +243,7 @@ class Configure:
 
     def to_dict(self):
         result = self.__dict__.copy()
-        if self.acl:
+        if self.acl == None:
             result['acl'] = 'None'
         else:
             result['acl'] = self.acl.to_dict()
