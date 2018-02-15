@@ -44,7 +44,7 @@ class JpgAnalysor(BaseAnalysor):
         super().__init__(respect_mtime=respect_mtime)
 
     def get_extensions(self):
-        return ['.jpg', '.jpeg', '.nef']
+        return ['.jpg', '.jpeg', '.nef', '.heic']
 
     def known_date_keys(self):
         return JpgAnalysor.KNOWN_DATE_KEYS
