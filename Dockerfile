@@ -1,4 +1,4 @@
-ARG PYTHON3_IMG=python:3.4-slim
+ARG PYTHON3_IMG=python:3.10.4-slim
 #ARG PYTHON3_IMG=armhf/python:3.6-slim
 FROM ${PYTHON3_IMG}
 
@@ -7,7 +7,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* && \
 ADD ./config/settings.yml /appspace/config
 VOLUME ["/appspace/src", "/appspace/dst", "/appspace/logs", "/appspace/config"]
 
-ARG URL_TMPL=https://www.sno.phy.queensu.ca/~phil/exiftool/
+ARG URL_TMPL=https://exiftool.org/
 RUN /bin/bash -c "export EXIF_TOOL_FN=`curl -s ${URL_TMPL} | grep ".tar.gz" | sed 's|.*href="\(.*\)\.tar\.gz".*|\1|g'` && \
     echo Tool name: \${EXIF_TOOL_FN}  && \
     export EXIF_TOOL_URL=${URL_TMPL}\${EXIF_TOOL_FN}.tar.gz && \
