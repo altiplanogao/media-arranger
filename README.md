@@ -32,3 +32,4 @@ python3 entry.py -h
 ```
 docker run --rm -v SOURCE_DIR:/appspace/src -v DEST_DIR:/appspace/dst -v LOG_DIR:/appspace/logs -v CONFIG_DIR:/appspace/config altiplanogao/media-arranger
 ```
+ 
